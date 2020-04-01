@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <title>Pryv - Javascript Lib</title>
+  <script src="https://api.pryv.com/lib-js/pryv.js"></script>
+</head>
+<body>
+  <span id="pryv-button"></span>
+  <script>
+    var connection = null;
+
+    var authSettings = {
+      spanButtonID: 'pryv-button', // span id the DOM that will be replaced by the Service specific button
+      onStateChange: pryvAuthStateChange, // event Listener for Authentication steps
+      authRequest: { // See: https://api.pryv.com/reference/#auth-request
+        requestingAppId: 'pryv-interview-exercise',
+        languageCode: 'en', // optional (default english)
+        requestedPermissions: [
+          {
+            "streamId": "fitbit",
+"defaultName": "Fitbit",
+"level": "read"
+          }
+        ],
+        clientData: {
+          'app-web-auth:description': {
+            'type': 'note/txt', 'content': 'This is a consent message.'
+          }
+        }
+      }
+    };
+    
+    function pryvAuthStateChange(state) { // called each time the authentication state changed
+      console.log('##pryvAuthStateChange', state);
+      if (state.id === Pryv.Browser.AuthStates.AUTHORIZED) {
+        connection = new Pryv.Connection(state.apiEndpoint);
+        logToConsole('# Browser succeeded for user ' + connection.apiEndpoint);
+      }
+      if (state.id === Pryv.Browser.AuthStates.LOGOUT) {
+        connection = null;
+        logToConsole('# Logout');
+      }
+  }
+    var serviceInfoUrl = 'https://api.pryv.com/lib-js/demos/service-info.json';
+    (async function () {
+      var service = await Pryv.Browser.setupAuth(authSettings, serviceInfoUrl);
+    })();
+  </script>
+</body>
+</html>
