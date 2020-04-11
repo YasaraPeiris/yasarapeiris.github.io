@@ -1,50 +1,229 @@
 <!doctype html>
+
 <html>
 <head>
-  <title>Pryv - Javascript Lib</title>
-  <script src="https://api.pryv.com/lib-js/pryv.js"></script>
+    <title>Pryv - Javascript Lib</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://api.pryv.com/lib-js/pryv.js"></script>
 </head>
 <body>
-  <span id="pryv-button"></span>
-  <script>
-    var connection = null;
+<div class="container">
+    <div class="row" id="header" style="padding: 5%;padding-bottom: 1%;padding-top: 1%;">
+<!--    include header file-->
+    </div>
+    <!-- login container -->
+    <div class="row" id="container-login" style="margin-bottom: 5%;">
+        <div class="row border rounded"
+             style="padding: 5%;border-color: gainsboro;border: solid;margin-right: 15%;margin-left: 15%;background: white;box-shadow: 7px 7px 7px #aaaaaa;">
+            <div class="col-md-12 justify-content-center" style="margin-left: 0; margin-right: 0; text-align: center">
+                <img
+                        src="https://pryv.com/wp-content/themes/pryv2019/assets/img/Illustration-hero.svg"
+                        scale="0"
+                        style="width:60%"
+                /></div>
+            <div class="col-md-12 d-flex justify-content-center"
+                 style="margin-left: 0; margin-right: 0; text-align: center">
+                <div class="alert alert-info" role="alert">
+                    Please click the below button to continue using Pryv login
+                    <!-- pryv button -->
+                    <div style="margin-top: 2%;">
+                        <span id="pryv-button"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 d-flex justify-content-center"
+                 style="margin-left: 0; margin-right: 0; text-align: center">
+                <!--button to be used when the use is already logged in-->
+                <button type="button" id="eventsID" class="btn btn-light button-style" onclick="getEvents()"
+                        style="display: none;">Already logged in - continue to graphs
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="row" id="container-graph" style="margin-bottom: 5%;display: none;">
+        <div class="row" style="width: 100%;margin-bottom: 2%;">
+            <div class="col">
+            </div>
+            <div class="col">
+            </div>
+            <div class="col">
+            </div>
+            <div class="col">
+                <!--back to login page.-->
+                <button type="button" id="back" class="btn btn-light button-style" onclick="back()">Back</button>
+            </div>
+        </div>
+        <div class="row" style="width: 100%;">
+            <div class="col card-style" style="padding: 0;">
+                <!--div to load the graph-->
+                <div id="myDiv" style="min-width: 100%;min-height:500px;">
+                </div>
+            </div>
+        </div>
+    </div>
 
-    var authSettings = {
-      spanButtonID: 'pryv-button', // span id the DOM that will be replaced by the Service specific button
-      onStateChange: pryvAuthStateChange, // event Listener for Authentication steps
-      authRequest: { // See: https://api.pryv.com/reference/#auth-request
-        requestingAppId: 'pryv-interview-exercise',
-        languageCode: 'en', // optional (default english)
-        requestedPermissions: [
-          {
-            "streamId": "fitbit",
-"defaultName": "Fitbit",
-"level": "read"
-          }
-        ],
-        clientData: {
-          'app-web-auth:description': {
-            'type': 'note/txt', 'content': 'This is a consent message.'
-          }
-        }
-      }
-    };
-    
-    function pryvAuthStateChange(state) { // called each time the authentication state changed
-      console.log('##pryvAuthStateChange', state);
-      if (state.id === Pryv.Browser.AuthStates.AUTHORIZED) {
-        connection = new Pryv.Connection(state.apiEndpoint);
-        logToConsole('# Browser succeeded for user ' + connection.apiEndpoint);
-      }
-      if (state.id === Pryv.Browser.AuthStates.LOGOUT) {
-        connection = null;
-        logToConsole('# Logout');
-      }
-  }
-    var serviceInfoUrl = 'https://api.pryv.com/lib-js/demos/service-info.json';
-    (async function () {
-      var service = await Pryv.Browser.setupAuth(authSettings, serviceInfoUrl);
-    })();
-  </script>
+</div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </body>
+<script>
+    var connection = null;
+    $(document).ready(function () {
+        //load header.html
+        $('#header').load("header.html");
+    });
+
+    $(window).on('load', function () {
+        var authSettings = {
+            spanButtonID: 'pryv-button', // span id the DOM that will be replaced by the Service specific button
+            onStateChange: pryvAuthStateChange, // event Listener for Authentication steps
+            authRequest: { // See: https://api.pryv.com/reference/#auth-request
+                requestingAppId: 'pryv-interview-exercise',
+                languageCode: 'en', // optional (default english)
+                requestedPermissions: [
+                    {
+                        "streamId": "fitbit",
+                        "defaultName": "Fitbit",
+                        "level": "read"
+                    }
+                ],
+                clientData: {
+                    'app-web-auth:description': {
+                        'type': 'note/txt', 'content': 'This is a consent message.'
+                    }
+                }
+            }
+        };
+
+        function pryvAuthStateChange(state) { // called each time the authentication state changed
+            console.log('##pryvAuthStateChange', state);
+            if (state.id === Pryv.Browser.AuthStates.AUTHORIZED) {
+                connection = new Pryv.Connection(state.apiEndpoint);
+                document.getElementById("eventsID").style.display = "block";
+
+                console.log('# Browser succeeded for user ' + connection.apiEndpoint);
+                document.getElementById("container-graph").style.display = "block";
+                document.getElementById("container-login").style.display = "none";
+                (async function () {
+                    try {
+                        const result = await connection.getEventsStreamed(queryParams, forEachEvent);
+                        console.log(result);
+                    } catch (e) {
+                        // handle error
+                    }
+                    createGraphs();
+                })();
+            }
+            if (state.id === Pryv.Browser.AuthStates.LOGOUT) {
+                connection = null;
+                window.location.reload();
+            }
+            if (state.id === Pryv.Browser.AuthStates.INITIALIZED && connection != null) {
+                connection = null;
+                window.location.reload();
+            }
+        }
+
+        let serviceInfoUrl = 'https://reg.pryv.me/service/info';
+        // override serviceInfo if provided in the url.
+        //serviceInfoUrl = serviceInfoUrl;
+        console.log(serviceInfoUrl);
+        (async function () {
+            const service = await Pryv.Browser.setupAuth(authSettings, serviceInfoUrl);
+            (await service.assets()).setAllDefaults();
+        })();
+    });
+
+    //const queryParams = { fromTime: 0, toTime: now, limit: 10000};
+    const queryParams = {limit: 10000};
+    var events = [];
+
+    function forEachEvent(event) {
+        //stream events using api call.
+        events.push(event);
+    }
+
+    function createArray() {
+        //create array using streamed events
+        let x = [];
+        let y = [];
+        events.forEach(function (item) {
+            x.push(item.time);
+            y.push(item.content);
+        })
+        return [x, y];
+    }
+
+    function plotLineGraph() {
+        //plot line graph
+        var values = createArray();
+        xarr = values[0];
+        yarr = values[1];
+        var trace1 = {
+            x: xarr,
+            y: yarr,
+            mode: 'lines+markers',
+            name: 'red',
+            marker: {
+                color: 'rgb(128, 0, 128)',
+                size: 8
+            },
+            line: {
+                color: 'rgb(128, 0, 128)',
+                width: 1
+            }
+        };
+
+        var data = [trace1];
+
+        var layout = {
+            title: 'Line and Scatter Styling graph for events in stream id fitbit',
+            xaxis: {
+                title: 'Time',
+                type: 'date'
+            },
+            yaxis: {
+                title: 'Content'
+            }
+        };
+        var div = document.getElementById("myDiv");
+        Plotly.newPlot('myDiv', data, layout);
+        //document.getElementById("myDiv").style.display = "contents";
+    }
+
+    function createGraphs() {
+        createArray();
+        plotLineGraph();
+    }
+
+    function back() {
+        document.getElementById("container-graph").style.display = "none";
+        document.getElementById("container-login").style.display = "block";
+    }
+
+    function getEvents() {
+        events = [];
+        if (connection == null) {
+            alert("Please use pryv login for authentication");
+            return;
+        }
+        document.getElementById("container-graph").style.display = "block";
+        document.getElementById("container-login").style.display = "none";
+        (async function () {
+            try {
+                const result = await connection.getEventsStreamed(queryParams, forEachEvent);
+                console.log(result);
+            } catch (e) {
+                // handle error
+            }
+            createGraphs();
+        })();
+    }
+
+</script>
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="js/bootstrap.js"></script>
 </html>
